@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3.7
 # Software License Agreement (BSD License)
 #
 # Copyright (c) 2013, Juergen Sturm, TUM
@@ -46,7 +46,7 @@ import os
 import numpy
 
 
-def read_file_list(filename,remove_bounds):
+def read_file_list(filename,remove_bounds=False):
     """
     Reads a trajectory from a text file. 
     
@@ -68,6 +68,7 @@ def read_file_list(filename,remove_bounds):
         lines = lines[100:-100]
     list = [[v.strip() for v in line.split(" ") if v.strip()!=""] for line in lines if len(line)>0 and line[0]!="#"]
     list = [(float(l[0]),l[1:]) for l in list if len(l)>1]
+    file.close()
     return dict(list)
 
 def associate(first_list, second_list,offset,max_difference):
@@ -110,6 +111,7 @@ if __name__ == '__main__':
     ''')
     parser.add_argument('first_file', help='first text file (format: timestamp data)')
     parser.add_argument('second_file', help='second text file (format: timestamp data)')
+    parser.add_argument('assoc_filename', help='output filename to be saved in SLAM/config/RGB-D/associations (e.g., assoc.txt)')
     parser.add_argument('--first_only', help='only output associated lines from first file', action='store_true')
     parser.add_argument('--offset', help='time offset added to the timestamps of the second file (default: 0.0)',default=0.0)
     parser.add_argument('--max_difference', help='maximally allowed time difference for matching entries (default: 0.02)',default=0.02)
@@ -119,12 +121,15 @@ if __name__ == '__main__':
     second_list = read_file_list(args.second_file)
 
     matches = associate(first_list, second_list,float(args.offset),float(args.max_difference))    
-
+    full_assoc_filename = "src/RDS-SLAM/SLAM/config/RGB-D/associations/" + args.assoc_filename 
+    f = open(full_assoc_filename, "w") 
     if args.first_only:
         for a,b in matches:
-            print("%f %s"%(a," ".join(first_list[a])))
+            f.write("%f %s"%(a," ".join(first_list[a])))
+            f.write("\n")
     else:
         for a,b in matches:
-            print("%f %s %f %s"%(a," ".join(first_list[a]),b-float(args.offset)," ".join(second_list[b])))
-            
+            f.write("%f %s %f %s"%(a," ".join(first_list[a]),b-float(args.offset)," ".join(second_list[b])))
+            f.write("\n")
+    f.close()
         

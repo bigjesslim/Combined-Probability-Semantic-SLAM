@@ -178,6 +178,7 @@ KeyFrame::KeyFrame(Frame& F, Map* pMap, KeyFrameDatabase* pKFDB)
     , mFrame(&F)
     , mvbKptOutliers(F.mvbKptOutliers)
     , mvbOutlier(F.mvbOutlier)
+    , geoProbability(F.geoProbability) // dynamic version
 {
     // [Semantic] save RGB image and semantc results
     mImRGB = F.mImRGB.clone();
@@ -1412,13 +1413,14 @@ void KeyFrame::UpdatePrioriMovingProbability()
             // update moving probability
             float p_old_d = pMP->GetMovingProbability();
             float p_old_s = 1 - p_old_d;
+            float geoprob = this->geoProbability[i]; // geometric probability from chi2 error
 
             if (this->mvbKptOutliers[i]) {
                 float p_d = p_zd_md * p_old_d;
                 float p_s = p_zd_ms * p_old_s;
                 float eta = 1 / (p_d + p_s);
                 // pMP->mMovingProbability = eta * p_d;
-                pMP->SetMovingProbability(eta * p_d);
+                pMP->SetMovingProbability(eta * p_d * geoprob);
             } else {
                 float p_d = p_zs_md * p_old_d;
                 float p_s = p_zs_ms * p_old_s;

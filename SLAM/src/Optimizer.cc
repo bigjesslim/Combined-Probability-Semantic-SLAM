@@ -37,6 +37,7 @@
 #include "Thirdparty/g2o/g2o/types/types_six_dof_expmap.h"
 
 #include <mutex>
+#include <cmath>
 
 #include "OptimizableTypes.h"
 
@@ -832,10 +833,10 @@ int Optimizer::PoseOptimization(Frame* pFrame)
             MapPoint* pMP = pFrame->mvpMapPoints[i];
             if (pMP) {
                 // TODO [Semantic] Skip outliers according Moving probability
-                if (Semantic::GetInstance()->IsDynamicMapPoint(pMP)) {
-                    outlier_map_mp++;
-                    pFrame->mvbOutlier[i] = true;
-                    continue;
+                    if (Semantic::GetInstance()->IsDynamicMapPoint(pMP)) {
+                        outlier_map_mp++;
+                        pFrame->mvbOutlier[i] = true;
+                        continue;
                 }
 
                 //Conventional SLAM
@@ -940,7 +941,7 @@ int Optimizer::PoseOptimization(Frame* pFrame)
                         e->Xw[1] = Xw.at<float>(1);
                         e->Xw[2] = Xw.at<float>(2);
 
-                        e->mMovingProbability = pMP->GetMovingProbability();
+                            e->mMovingProbability = pMP->GetMovingProbability();
                         optimizer.addEdge(e);
 
                         vpEdgesMono.push_back(e);
@@ -1015,7 +1016,15 @@ int Optimizer::PoseOptimization(Frame* pFrame)
             }
 
             const float chi2 = e->chi2();
+            // dynamic version 7 - sigmoid function
+            // float geoprob_sigmoid = ((chi2*4)/chi2Mono[it])-2;
+            // float geoprob = 1/(1+std::exp(-geoprob_sigmoid));
 
+            // dynamic version 1 - linear function 
+            float geoprob = min(chi2/chi2, chi2/chi2Mono[it]);
+
+            pFrame->geoProbability[idx] = geoprob;
+            
             if (chi2 > chi2Mono[it]) {
                 pFrame->mvbOutlier[idx] = true;
                 e->setLevel(1);
@@ -1028,7 +1037,7 @@ int Optimizer::PoseOptimization(Frame* pFrame)
             if (it == 2)
                 e->setRobustKernel(0);
         }
-
+        
         for (size_t i = 0, iend = vpEdgesMono_FHR.size(); i < iend; i++) {
             ORB_SLAM3::EdgeSE3ProjectXYZOnlyPoseToBody* e = vpEdgesMono_FHR[i];
 
@@ -1039,6 +1048,14 @@ int Optimizer::PoseOptimization(Frame* pFrame)
             }
 
             const float chi2 = e->chi2();
+            // dynamic version 7 - sigmoid function
+            // float geoprob_sigmoid = ((chi2*4)/chi2Mono[it])-2;
+            // float geoprob = 1/(1+std::exp(-geoprob_sigmoid));
+
+            // dynamic version 1 - linear function 
+            float geoprob = min(chi2/chi2, chi2/chi2Mono[it]);
+            
+            pFrame->geoProbability[idx] = geoprob;
 
             if (chi2 > chi2Mono[it]) {
                 pFrame->mvbOutlier[idx] = true;
@@ -1063,6 +1080,14 @@ int Optimizer::PoseOptimization(Frame* pFrame)
             }
 
             const float chi2 = e->chi2();
+            // dynamic version 7 - sigmoid function
+            // float geoprob_sigmoid = ((chi2*4)/chi2Stereo[it])-2;
+            // float geoprob = 1/(1+std::exp(-geoprob_sigmoid));
+
+            // dynamic version 1 - linear function 
+            float geoprob = min(chi2/chi2, chi2/chi2Mono[it]);
+
+            pFrame->geoProbability[idx] = geoprob;
 
             if (chi2 > chi2Stereo[it]) {
                 pFrame->mvbOutlier[idx] = true;
@@ -1076,7 +1101,7 @@ int Optimizer::PoseOptimization(Frame* pFrame)
             if (it == 2)
                 e->setRobustKernel(0);
         }
-
+        
         if (optimizer.edges().size() < 10)
             break;
     }
@@ -1134,10 +1159,16 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pKF, bool* pbStopFlag, vector<Ke
         for (vector<MapPoint *>::iterator vit = vpMPs.begin(), vend = vpMPs.end(); vit != vend; vit++) {
             MapPoint* pMP = *vit;
             if (pMP)
-                //  TODO [Semantic] check moving probability
+                // dynamic prototype <removed> dynamic version 2 <removed>
+                // TODO [Semantic] check moving probability
                 if (pMP->IsDynamicMapPoint()) {
                     continue;
                 }
+
+                // dynamic version 2
+                // if (pMP->GetMovingProbability()>0.6){
+                //     continue;
+                // }
 
             if (!pMP->isBad() && pMP->GetMap() == pCurrentMap) {
 
@@ -8043,8 +8074,8 @@ int Optimizer::PoseOptimization(KeyFrame* pFrame, bool bUpdateMap)
             }
             // TODO [Semantic] Skip outliers according Moving probability
             if (pMP->IsDynamicMapPoint()) {
-                outlier_map_mp++;
-                pFrame->mvbOutlier[i] = true;
+                        outlier_map_mp++;
+                        pFrame->mvbOutlier[i] = true;
                 continue;
             }
             // add map point vertex

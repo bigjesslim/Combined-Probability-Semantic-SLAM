@@ -176,6 +176,7 @@ public:
 
     // TODO [Semantic] outliers of key points
     std::vector<bool> mvbKptOutliers;
+    std::vector<float> geoProbability; // dynamic version - geometric probability from chi2 value
     bool IsInImage(const float& x, const float& y) const;
 
     // Corresponding stereo coordinate and depth for each keypoint.

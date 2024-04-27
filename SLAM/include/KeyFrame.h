@@ -403,6 +403,8 @@ public:
     // void UpdateMovingProbability(KeyFrame* pKF);
     // Return whether has dynamic object
     void UpdatePrioriMovingProbability();
+    // dynamic version - geometric probability calculated from chi2 value
+    std::vector<float> geoProbability;
 
     void UpdateBoW(KeyFrame* pKF);
 

@@ -77,6 +77,7 @@ Frame::Frame(const Frame& frame)
     , mDescriptorsRight(frame.mDescriptorsRight.clone())
     , mvpMapPoints(frame.mvpMapPoints)
     , mvbOutlier(frame.mvbOutlier)
+    , geoProbability(frame.geoProbability) // dynamic version
     , mImuCalib(frame.mImuCalib)
     , mnCloseMPs(frame.mnCloseMPs)
     , mpImuPreintegrated(frame.mpImuPreintegrated)
@@ -210,6 +211,7 @@ Frame::Frame(const cv::Mat& imLeft, const cv::Mat& imRight, const double& timeSt
 
     mvpMapPoints = vector<MapPoint*>(N, static_cast<MapPoint*>(NULL));
     mvbOutlier = vector<bool>(N, false);
+    geoProbability = vector<float>(N, 1.0); // dynamic version
     mmProjectPoints.clear(); // = map<long unsigned int, cv::Point2f>(N, static_cast<cv::Point2f>(NULL));
     mmMatchedInImage.clear();
 
@@ -335,6 +337,7 @@ Frame::Frame(const cv::Mat& imRGB, const cv::Mat& imGray, const cv::Mat& imDepth
     mmMatchedInImage.clear();
 
     mvbOutlier = vector<bool>(N, false);
+    geoProbability = vector<float>(N, 1.0); // dynamic version
 
     // TODO [Semantic ] indicate features whether are outliers
     mvbKptOutliers = vector<bool>(N, false);
@@ -434,6 +437,7 @@ Frame::Frame(const cv::Mat& imGray, const cv::Mat& imDepth, const double& timeSt
     mmMatchedInImage.clear();
 
     mvbOutlier = vector<bool>(N, false);
+    geoProbability = vector<float>(N, 1.0); // dynamic version
 
     // This is done only for the first Frame (or after a change in the calibration)
     if (mbInitialComputations) {
@@ -539,6 +543,7 @@ Frame::Frame(const cv::Mat& imGray, const double& timeStamp, ORBextractor* extra
     mmMatchedInImage.clear();
 
     mvbOutlier = vector<bool>(N, false);
+    geoProbability = vector<float>(N, 1.0); // dynamic version
 
     // This is done only for the first Frame (or after a change in the calibration)
     if (mbInitialComputations) {
@@ -1285,6 +1290,7 @@ Frame::Frame(const cv::Mat& imLeft, const cv::Mat& imRight, const double& timeSt
 
     mvpMapPoints = vector<MapPoint*>(N, static_cast<MapPoint*>(nullptr));
     mvbOutlier = vector<bool>(N, false);
+    geoProbability = vector<float>(N, 1.0); // dynamic version
 
     AssignFeaturesToGrid();
     std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now();

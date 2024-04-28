@@ -1,107 +1,74 @@
 # Introduction
 
-The scene rigidity is a strong assumption in typical visual Simultaneous Localization and Mapping (vSLAM) algorithms. Such strong assumption limits the usage of most vSLAM in dynamic real-world environments, which are the target of several relevant applications such as augmented reality, semantic mapping, unmanned autonomous vehicles, and service robotics. 
+This project is forked from [RDS-SLAM](https://github.com/yubaoliu/RDS-SLAM). 
 
-Many solutions are proposed that use different kinds of semantic segmentation methods (e.g., Mask R-CNN, SegNet) to detect dynamic objects and remove outliers. However, as far as we know, such kinds of methods wait for the semantic results in the tracking thread in their architecture, and the processing time depends on the segmentation methods used. 
+This project balances performance across low-dynamic and high-dynamic sequences by augmenting with a geometric probability estimate derived from the computed chi-squared error from pose optimization. 
 
-In this paper, we present RDS-SLAM, a real-time visual dynamic SLAM algorithm that is built on ORB-SLAM3 and adds a semantic thread and a semantic-based optimization thread for robust tracking and mapping in dynamic environments in real-time. These novel threads run in parallel with the others, and therefore the tracking thread does not need to wait for the semantic information anymore. 
-Besides, we propose an algorithm to obtain as the latest semantic information as possible, thereby making it possible to use segmentation methods with different speeds in a uniform way. We update and propagate semantic information using the moving probability, which is saved in the map and used to remove outliers from tracking using a data association algorithm.
-
-This repo is a simplified sample source code of RDS-SLAM. Note that it is not exactly as the same as the paper. 
-
-<img src="./img/system_overview.png"/>
-
-# Demo
-
--   Real Environment
-    -   Mask R-CNN + Kinect: <https://youtu.be/-peAZEO6Bbo>
--   TUM Dataset (Mask R-CNN)
-    -   walk xyz: <https://youtu.be/P-dew4M5Un0>
--   TUM Dataset (SegNet)
-    -   walk xyz: <https://youtu.be/7E7Y5ER11B8>
+This project also replaces MaskRCNN with higher performing LRASPP in terms of speed and accuracy, lowering the semantic delay.
 
 # Develop environments
 
 -   ubuntu: 18.04
 -   ROS melodic
--   docker: 19.03 [optional]
--   dock-compose: 1.26.2 [optional]
--   cuda: 10.2
--   OpenCV 3.3.1
+-   cuda: 11.1
+-   OpenCV 4.2.0
+-   Torch 1.8.0+cu111
+-   Python 3.7 
 
 # How to use
 
-## How to deploy using docker
+## How to build
+
+catkin_build_ws is a ROS workspace.
+
+[Note] You can set up a catkin workspace similarly following [this ROS tutorial](https://industrial-training-master.readthedocs.io/en/melodic/_source/session1/Create-Catkin-Workspace.html)
+
+1. Modify the ```mrcnn_root``` variable in the script ```MaskRCNN_ROS/script/action_server.py``` to your local setup.
+
+2. Execute the following commands.
 
 ```sh
-cd docker
-docker-compose bulid
-docker-compose up
-```
-
-## How to deploy on the local machine
-
-We recommand using the docker virtual machine. 
-Please build the dependencies sequentially if you want to build on your local machine:
-
--   SegNet_ROS
--   MaskRCNN_ROS
--   SLAM
-
-## How to build SLAM client
-
-catkin_ws is a ROS workspace.
-
-```sh
-cd ~/catkin_ws/src/SLAM/
+cd ~/catkin_build_ws/src/SLAM/
 ./build_thirdparty.sh
 
-cd ~/catkin_ws
+cd ~/catkin_build_ws
 catkin_make
 ```
+
+## Set up TUM RGB-D Dataset
+1. Download TUM RGB-D Dataset sequence folders from Category:Dynamic Objects (i.e., the eight sequences prepended with "fr3").
+Download from: https://cvg.cit.tum.de/data/datasets/rgbd-dataset/download 
+
+2. Save sequence folders into the folder ```/root/Dataset/TUM/freiburg3/```
 
 ## How to run demo
 
 ```sh
-roslaunch segnet_ros action_server.launch
+roslaunch segnet_ros action_server_dl.launch
 ```
 
 [Important] Please run w/static to initialize **GPU** before you evaluate any datasets.
 
 ```sh
-roslaunch rds_slam tum_segnet_walk_static.launch
+roslaunch rds_slam tum_maskrcnn_walk_static.launch
 ```
 
 ```sh
-roslaunch rds_slam tum_segnet_walk_xyz.launch
+roslaunch rds_slam tum_maskrcnn_walk_xyz.launch
 ```
 
-# Dataset
+## How to run evaluations after demo
 
--   Let docker access your dataset if you use docker 
-
+From catkin workspace directory, run: 
 ```sh
-vim docker/.env
-
-DATASET_DIR=/.../data/Dataset
+python2.7 src/RDS-SLAM/SLAM/evaluation/evaluate_rpe.py /root/Dataset/TUM/freiburg3/rgbd_dataset_freiburg3_sitting_static/groundtruth.txt /root/.ros/CameraTrajectory.txt --verbose
 ```
-
--   TUM dataset 
-     RDS-SLAM evaluated using the [TUM](https://vision.in.tum.de/data/datasets/rgbd-dataset) dataset
-      Please download the TUM dataset sequences. Please check the folder path and change the folder path in the launch files and docker configuration if available.
--   KITTI dataset
-    In principle, RDS-SLAM support mono camera and stereo camera. 
-    We will try to enable and  evaluate them later.
 
 # Notes
 
 -   [**Important**] please run a dataset to initialize the GPU  before you evaluate the time and tracking performance.
 -   Please use the data listed in the original paper because the tracking performance and real-time performance is somehow related to the GPU and CPU configuration
 -   The real-time performance and tracking performance can be trade off by controlling the frame rate by adjusting some  parameters in the SLAM main loop.
--   The framerate can be controlled from offline to 30HZ. But you need to trade off the tracking performance and real-time performance.
--   Either SegNet or Mask R-CNN version can be kicked off at a time.
--   [Semantic mapping] please refer RTS-vSLAM if you want to build the semantic map.
-    RTS-vSLAM: Real-time Visual Semantic Tracking and Mapping under Dynamic Environments
 
 # References
 
@@ -132,11 +99,3 @@ DATASET_DIR=/.../data/Dataset
 -   RDS-SLAM: 
     RDS-SLAM is released under GPLv3 license. The code/library dependencies is the same as ORB_SLAM3.
 
-# Discussion
-
--   The tracking performance is somehow influenced by the GPU and CPU configuration. This will result in unstable tracking in some devices. In such case, please lower the framerate by adjusting the prameters in the SLAM end.
--   RDS-SLAM did not obviously deal with the unkown objects that not belonging to the predefined objects. The geometric cleck in G2o/BA can detect and remove some outliers. KMOP-vSLAM is a solution that can deal with unknown objects.
-
-# TODO
-
--   [ ] seperate SegNet and MasK R-CNN from SLAM client

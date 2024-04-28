@@ -6,6 +6,11 @@ project(maskrcnn_ros)
 ## Compile as C++11, supported in ROS melodic and newer
 add_compile_options(-std=c++11)
 
+set(PYTHON_VERSION 3.7)
+set(PYTHON_EXECUTABLE /usr/bin/python3.7)
+set(PYTHON_INCLUDE_DIR /usr/include/python3.7m)
+set(PYTHON_LIBRARY /usr/lib/x86_64-linux-gnu/libpython3.7m.so)
+
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 
 ## Find catkin macros and libraries
@@ -29,7 +34,7 @@ find_package(Glog REQUIRED)
 find_package(OpenCV 3.0 REQUIRED)
 
 ## System dependencies are found with CMake's conventions
-find_package(Boost REQUIRED)
+find_package(Boost REQUIRED python3)
 if(Boost_FOUND)
     add_definitions(${Boost_LIB_DIAGNOSTIC_DEFINITIONS})
     message(STATUS "Boost  found")
@@ -138,7 +143,7 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
- INCLUDE_DIRS include
+ INCLUDE_DIRS include /usr/local/cuda-11.1/include
  LIBRARIES maskrcnn_ros
  CATKIN_DEPENDS roscpp rospy std_msgs sensor_msgs geometry_msgs actionlib_msgs cv_bridge message_generation actionlib message_runtime 
  # DEPENDS system_lib

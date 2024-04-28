@@ -23,9 +23,17 @@ catkin_build_ws is a ROS workspace.
 
 [Note] You can set up a catkin workspace similarly following [this ROS tutorial](https://industrial-training-master.readthedocs.io/en/melodic/_source/session1/Create-Catkin-Workspace.html)
 
-1. Modify the ```mrcnn_root``` variable in the script ```MaskRCNN_ROS/script/action_server.py``` to your local setup.
+1. Modify the the following line in ```MaskRCNN_ROS/script/action_server.py``` to your local setup.
+```python
+mrcnn_root = '/home/catkin_build_ws/src/RDS-SLAM/MaskRCNN_ROS/include/MaskRCNN'
+```
 
-2. Execute the following commands.
+2. Modify the following line in ```SLAM/CMakeLists.txt``` to your local setup. 
+```cmake
+SET(Torch_DIR /root/../home/bigjesslim/libtorch/share/cmake/Torch)
+``` 
+
+3. Execute the following commands.
 
 ```sh
 cd ~/catkin_build_ws/src/SLAM/
